@@ -1,14 +1,21 @@
+import { boolean, object } from "zod";
+
 export const validateRequest = (schema) => {
   return (req, res, next) => {
-    const result = schema.safePars(req.body);
+    const result = schema.safeParse(req.body);
 
     if (!result.success) {
-      const errorMessages = result.error.errors.map((err) => err.message);
-      const error = errorMessages.join(", ");
-      return res.status(400).json({ message: error });
+      const formatted = result.error.format();
+
+      const flatError = Object.values(formatted)
+        .flat()
+        .filter(Boolean)
+        .map((err) => err._errors)
+        .flat();
+
+      return res.status(400).json({ message: flatError.join(", ") });
     }
 
-
-    next()
+    next();
   };
 };
